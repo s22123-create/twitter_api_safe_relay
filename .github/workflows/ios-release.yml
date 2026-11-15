@@ -1,0 +1,94 @@
+name: Release iOS client
+
+on:
+  push:
+    tags:
+      - "ios-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build IPA and capture screenshots
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Build unsigned device app
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/XRelayClient.xcodeproj \
+            -scheme XRelayClient \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath "$RUNNER_TEMP/DeviceDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tee "$RUNNER_TEMP/device-build.log"
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          app_path="$RUNNER_TEMP/DeviceDerivedData/Build/Products/Release-iphoneos/XRelayClient.app"
+          test -d "$app_path"
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$app_path" "$RUNNER_TEMP/ipa/Payload/"
+          /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/ipa" "$RUNNER_TEMP/XRelayClient-unsigned.ipa"
+
+      - name: Build Simulator app
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/XRelayClient.xcodeproj \
+            -scheme XRelayClient \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tee "$RUNNER_TEMP/simulator-build.log"
+
+      - name: Capture Simulator screenshot
+        run: |
+          set -euo pipefail
+          device_udid="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $2; exit}')"
+          test -n "$device_udid"
+          xcrun simctl boot "$device_udid" 2>/dev/null || true
+          xcrun simctl bootstatus "$device_udid" -b
+          app_path="$RUNNER_TEMP/SimulatorDerivedData/Build/Products/Debug-iphonesimulator/XRelayClient.app"
+          xcrun simctl install "$device_udid" "$app_path"
+          xcrun simctl launch "$device_udid" com.example.XRelayClient
+          sleep 3
+          xcrun simctl io "$device_udid" screenshot "$RUNNER_TEMP/XRelayClient-home.png"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: XRelayClient-${{ github.ref_name }}
+          path: |
+            ${{ runner.temp }}/XRelayClient-unsigned.ipa
+            ${{ runner.temp }}/XRelayClient-home.png
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" \
+              "$RUNNER_TEMP/XRelayClient-unsigned.ipa" \
+              "$RUNNER_TEMP/XRelayClient-home.png" \
+              --clobber
+          else
+            gh release create "$tag" \
+              "$RUNNER_TEMP/XRelayClient-unsigned.ipa" \
+              "$RUNNER_TEMP/XRelayClient-home.png" \
+              --title "X Relay Client ${tag#ios-}" \
+              --notes "iOS 12対応のX Relay Clientです。署名なしIPAのため、実機配布にはApple署名・プロビジョニング設定が必要です。"
+          fi

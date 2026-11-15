@@ -1,6 +1,14 @@
 # X Relay Client
 
+![ホーム画面](screenshots/home.png)
+
 iOS 12以上で動作するUIKit製のXクライアントです。XのCookieやCSRFトークンはアプリに保存せず、`twitter-api-safe-relay` が開いたログイン済みブラウザのセッションを利用します。
+
+## リリース
+
+最新版は [GitHub Releases](https://github.com/s22123-create/twitter_api_safe_relay/releases) から取得できます。
+
+配布IPAはActionsで生成した署名なしIPAです。App Store配布や実機へのインストールには、Apple Developerの証明書・プロビジョニングプロファイルで再署名してください。Simulatorでの動作確認済みアプリは、同じReleaseのスクリーンショットとともに公開されます。
 
 ## 起動
 
@@ -21,5 +29,6 @@ iOS 12以上で動作するUIKit製のXクライアントです。XのCookieやC
 - リクエストカタログを使ったキーワード検索
 - テキストポスト
 - 複数プロフィールの `x-profile-name` 切り替え
+- iOS Simulatorでの起動確認とホーム画面スクリーンショット
 
 queryIdやfeature flagはアプリに固定せず、リレーの `/requests.ndjson` から取得します。これにより、X Web App側の変更時にアプリを再配布せず、リレー側のカタログを更新できます。
