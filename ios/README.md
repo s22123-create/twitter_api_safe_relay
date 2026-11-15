@@ -8,7 +8,7 @@ iOS 12以上で動作するUIKit製のXクライアントです。XのCookieやC
 
 最新版は [GitHub Releases](https://github.com/s22123-create/twitter_api_safe_relay/releases) から取得できます。
 
-配布IPAはActionsで生成した署名なしIPAです。App Store配布や実機へのインストールには、Apple Developerの証明書・プロビジョニングプロファイルで再署名してください。Simulatorでの動作確認済みアプリは、同じReleaseのスクリーンショットとともに公開されます。
+配布IPAはActionsで生成した署名なしIPAです。Impactorなどで再署名する場合も、`Payload/XRelayClient.app` がIPA直下にある標準構造で生成されています。App Store配布や実機へのインストールには、Apple Developerの証明書・プロビジョニングプロファイルで再署名してください。Simulatorでの動作確認済みアプリは、同じReleaseのスクリーンショットとともに公開されます。
 
 ## 起動
 

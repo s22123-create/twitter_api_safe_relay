@@ -40,7 +40,12 @@ jobs:
           test -d "$app_path"
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
           cp -R "$app_path" "$RUNNER_TEMP/ipa/Payload/"
-          /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$RUNNER_TEMP/ipa" "$RUNNER_TEMP/XRelayClient-unsigned.ipa"
+          (
+            cd "$RUNNER_TEMP/ipa"
+            /usr/bin/zip -qry "$RUNNER_TEMP/XRelayClient-unsigned.ipa" Payload
+          )
+          unzip -Z1 "$RUNNER_TEMP/XRelayClient-unsigned.ipa" | grep -q '^Payload/XRelayClient.app/'
+          ! unzip -Z1 "$RUNNER_TEMP/XRelayClient-unsigned.ipa" | grep -q '^ipa/'
 
       - name: Build Simulator app
         run: |
