@@ -50,7 +50,6 @@ jobs:
           app_path="$RUNNER_TEMP/DerivedData/Build/Products/Debug-iphonesimulator/XRelayClient.app"
           xcrun simctl install "$device_udid" "$app_path"
           xcrun simctl launch "$device_udid" com.example.XRelayClient
-          xcrun simctl spawn "$device_udid" launchctl print "gui/$(id -u)/com.example.XRelayClient" >/dev/null
 
       - name: Collect simulator diagnostics
         if: always()
